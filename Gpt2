@@ -1,0 +1,200 @@
+#include <iostream>
+#include <vector>
+
+class StackMachine {
+public:
+    static const int STACK_SIZE = 100;
+    static const int MEMORY_SIZE = 100;
+
+    int stack[STACK_SIZE];
+    int sp; // Stack pointer
+    int memory[MEMORY_SIZE];
+
+    StackMachine() : sp(0) {}
+
+    void push(int value) {
+        stack[sp++] = value;
+    }
+
+    int pop() {
+        return stack[--sp];
+    }
+};
+
+enum class Instruction {
+    PUSH,
+    POP,
+    ADD,
+    SUB,
+    MUL,
+    DIV,
+    DUP,
+    SWAP,
+    PRINT,
+    READ,
+    WRITE,
+    JMP,
+    JZ,
+    JNZ,
+    EQ,
+    LT,
+    GT,
+    ALLOC,
+    LOAD,
+    STORE,
+    HALT
+};
+
+void execute(std::vector<Instruction>& program) {
+    StackMachine machine;
+    int ip = 0; // Instruction pointer
+
+    while (ip < program.size()) {
+        Instruction current = program[ip];
+
+        switch (current) {
+            case Instruction::PUSH:
+                machine.push(program[++ip]);
+                break;
+            case Instruction::POP:
+                machine.pop();
+                break;
+            case Instruction::ADD:
+                {
+                    int b = machine.pop();
+                    int a = machine.pop();
+                    machine.push(a + b);
+                }
+                break;
+            case Instruction::SUB:
+                {
+                    int b = machine.pop();
+                    int a = machine.pop();
+                    machine.push(a - b);
+                }
+                break;
+            case Instruction::MUL:
+                {
+                    int b = machine.pop();
+                    int a = machine.pop();
+                    machine.push(a * b);
+                }
+                break;
+            case Instruction::DIV:
+                {
+                    int b = machine.pop();
+                    int a = machine.pop();
+                    machine.push(a / b);
+                }
+                break;
+            case Instruction::DUP:
+                machine.push(machine.stack[machine.sp - 1]);
+                break;
+            case Instruction::SWAP:
+                {
+                    int temp = machine.stack[machine.sp - 1];
+                    machine.stack[machine.sp - 1] = machine.stack[machine.sp - 2];
+                    machine.stack[machine.sp - 2] = temp;
+                }
+                break;
+            case Instruction::PRINT:
+                std::cout << machine.stack[machine.sp - 1] << std::endl;
+                break;
+            case Instruction::READ:
+                {
+                    int var_index = program[++ip];
+                    std::cout << "Enter a value: ";
+                    std::cin >> machine.memory[var_index];
+                }
+                break;
+            case Instruction::WRITE:
+                {
+                    int var_index = program[++ip];
+                    std::cout << machine.memory[var_index] << std::endl;
+                }
+                break;
+            case Instruction::JMP:
+                ip = program[++ip];
+                break;
+            case Instruction::JZ:
+                if (machine.pop() == 0) {
+                    ip = program[++ip];
+                } else {
+                    ip += 2; // Skip the jump target
+                }
+                break;
+            case Instruction::JNZ:
+                if (machine.pop() != 0) {
+                    ip = program[++ip];
+                } else {
+                    ip += 2; // Skip the jump target
+                }
+                break;
+            case Instruction::EQ:
+                {
+                    int b = machine.pop();
+                    int a = machine.pop();
+                    machine.push(a == b);
+                }
+                break;
+            case Instruction::LT:
+                {
+                    int b = machine.pop();
+                    int a = machine.pop();
+                    machine.push(a < b);
+                }
+                break;
+            case Instruction::GT:
+                {
+                    int b = machine.pop();
+                    int a = machine.pop();
+                    machine.push(a > b);
+                }
+                break;
+            case Instruction::ALLOC:
+                {
+                    int var_index = program[++ip];
+                    machine.memory[var_index] = 0;  // Initialize the variable
+                }
+                break;
+            case Instruction::LOAD:
+                {
+                    int var_index = program[++ip];
+                    machine.push(machine.memory[var_index]);
+                }
+                break;
+            case Instruction::STORE:
+                {
+                    int var_index = program[++ip];
+                    machine.memory[var_index] = machine.pop();
+                }
+                break;
+            case Instruction::HALT:
+                return;
+            default:
+                std::cerr << "Unknown instruction" << std::endl;
+                return;
+        }
+
+        ip++;
+    }
+}
+
+int main() {
+    // Example program: ALLOC 0, READ 0, ALLOC 1, READ 1, LOAD 0, LOAD 1, ADD, WRITE 2, HALT
+    std::vector<Instruction> program = {
+        Instruction::ALLOC, 0,
+        Instruction::READ, 0,
+        Instruction::ALLOC, 1,
+        Instruction::READ, 1,
+        Instruction::LOAD, 0,
+        Instruction::LOAD, 1,
+        Instruction::ADD,
+        Instruction::WRITE, 2,
+        Instruction::HALT
+    };
+
+    execute(program);
+
+    return 0;
+}
